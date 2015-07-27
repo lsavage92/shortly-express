@@ -21,11 +21,11 @@ describe('', function() {
 
   beforeEach(function() {
     // log out currently signed in user
-    request('http://127.0.0.1:4568/logout', function(error, res, body) {});
+    request('http://127.0.0.1:3000/logout', function(error, res, body) {});
 
     // delete link for roflzoo from db so it can be created later for the test
     db.knex('urls')
-      .where('url', '=', 'http://www.roflzoo.com/')
+      .where('url', '=', 'http://roflzoo.com/')
       .del()
       .catch(function(error) {
         throw {
@@ -63,7 +63,7 @@ describe('', function() {
 
     var requestWithSession = request.defaults({jar: true});
 
-    xbeforeEach(function(done){      // create a user that we can then log-in with
+    beforeEach(function(done){      // create a user that we can then log-in with
       new User({
           'username': 'Phillip',
           'password': 'Phillip'
@@ -71,7 +71,7 @@ describe('', function() {
         var options = {
           'method': 'POST',
           'followAllRedirects': true,
-          'uri': 'http://127.0.0.1:4568/login',
+          'uri': 'http://127.0.0.1:3000/login',
           'json': {
             'username': 'Phillip',
             'password': 'Phillip'
@@ -87,7 +87,7 @@ describe('', function() {
     it('Only shortens valid urls, returning a 404 - Not found for invalid urls', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/links',
+        'uri': 'http://127.0.0.1:3000/links',
         'json': {
           'url': 'definitely not a valid url'
         }
@@ -105,15 +105,15 @@ describe('', function() {
       var options = {
         'method': 'POST',
         'followAllRedirects': true,
-        'uri': 'http://127.0.0.1:4568/links',
+        'uri': 'http://127.0.0.1:3000/links',
         'json': {
-          'url': 'http://www.roflzoo.com/'
+          'url': 'http://roflzoo.com/'
         }
       };
 
       it('Responds with the short code', function(done) {
         requestWithSession(options, function(error, res, body) {
-          expect(res.body.url).to.equal('http://www.roflzoo.com/');
+          expect(res.body.url).to.equal('http://roflzoo.com/');
           expect(res.body.code).to.not.be.null;
           done();
         });
@@ -122,12 +122,12 @@ describe('', function() {
       it('New links create a database entry', function(done) {
         requestWithSession(options, function(error, res, body) {
           db.knex('urls')
-            .where('url', '=', 'http://www.roflzoo.com/')
+            .where('url', '=', 'http://roflzoo.com/')
             .then(function(urls) {
               if (urls['0'] && urls['0']['url']) {
                 var foundUrl = urls['0']['url'];
               }
-              expect(foundUrl).to.equal('http://www.roflzoo.com/');
+              expect(foundUrl).to.equal('http://roflzoo.com/');
               done();
             });
         });
@@ -136,12 +136,12 @@ describe('', function() {
       it('Fetches the link url title', function (done) {
         requestWithSession(options, function(error, res, body) {
           db.knex('urls')
-            .where('title', '=', 'Rofl Zoo - Daily funny animal pictures')
+            .where('title', '=', 'Funny pictures of animals, funny dog pictures')
             .then(function(urls) {
               if (urls['0'] && urls['0']['title']) {
                 var foundTitle = urls['0']['title'];
               }
-              expect(foundTitle).to.equal('Rofl Zoo - Daily funny animal pictures');
+              expect(foundTitle).to.equal('Funny pictures of animals, funny dog pictures');
               done();
             });
         });
@@ -156,9 +156,9 @@ describe('', function() {
       beforeEach(function(done){
         // save a link to the database
         link = new Link({
-          url: 'http://www.roflzoo.com/',
-          title: 'Rofl Zoo - Daily funny animal pictures',
-          base_url: 'http://127.0.0.1:4568'
+          url: 'http://roflzoo.com/',
+          title: 'Funny pictures of animals, funny dog pictures',
+          base_url: 'http://127.0.0.1:3000'
         });
         link.save().then(function(){
           done();
@@ -169,9 +169,9 @@ describe('', function() {
         var options = {
           'method': 'POST',
           'followAllRedirects': true,
-          'uri': 'http://127.0.0.1:4568/links',
+          'uri': 'http://127.0.0.1:3000/links',
           'json': {
-            'url': 'http://www.roflzoo.com/'
+            'url': 'http://roflzoo.com/'
           }
         };
 
@@ -185,12 +185,12 @@ describe('', function() {
       it('Shortcode redirects to correct url', function(done) {
         var options = {
           'method': 'GET',
-          'uri': 'http://127.0.0.1:4568/' + link.get('code')
+          'uri': 'http://127.0.0.1:3000/' + link.get('code')
         };
 
         requestWithSession(options, function(error, res, body) {
           var currentLocation = res.request.href;
-          expect(currentLocation).to.equal('http://www.roflzoo.com/');
+          expect(currentLocation).to.equal('http://roflzoo.com/');
           done();
         });
       });
@@ -198,11 +198,11 @@ describe('', function() {
       it('Returns all of the links to display on the links page', function(done) {
         var options = {
           'method': 'GET',
-          'uri': 'http://127.0.0.1:4568/links'
+          'uri': 'http://127.0.0.1:3000/links'
         };
 
         requestWithSession(options, function(error, res, body) {
-          expect(body).to.include('"title":"Rofl Zoo - Daily funny animal pictures"');
+          expect(body).to.include('"title":"Funny pictures of animals, funny dog pictures"');
           expect(body).to.include('"code":"' + link.get('code') + '"');
           done();
         });
@@ -212,24 +212,24 @@ describe('', function() {
 
   }); // 'Link creation'
 
-  xdescribe('Priviledged Access:', function(){
+  describe('Priviledged Access:', function(){
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
-      request('http://127.0.0.1:4568/', function(error, res, body) {
+      request('http://127.0.0.1:3000/', function(error, res, body) {
         expect(res.req.path).to.equal('/login');
         done();
       });
     });
 
     it('Redirects to login page if a user tries to create a link and is not signed in', function(done) {
-      request('http://127.0.0.1:4568/create', function(error, res, body) {
+      request('http://127.0.0.1:3000/create', function(error, res, body) {
         expect(res.req.path).to.equal('/login');
         done();
       });
     });
 
     it('Redirects to login page if a user tries to see all of the links and is not signed in', function(done) {
-      request('http://127.0.0.1:4568/links', function(error, res, body) {
+      request('http://127.0.0.1:3000/links', function(error, res, body) {
         expect(res.req.path).to.equal('/login');
         done();
       });
@@ -237,12 +237,12 @@ describe('', function() {
 
   }); // 'Priviledged Access'
 
-  xdescribe('Account Creation:', function(){
+  describe('Account Creation:', function(){
 
     it('Signup creates a user record', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/signup',
+        'uri': 'http://127.0.0.1:3000/signup',
         'json': {
           'username': 'Svnh',
           'password': 'Svnh'
@@ -270,7 +270,7 @@ describe('', function() {
     it('Signup logs in a new user', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/signup',
+        'uri': 'http://127.0.0.1:3000/signup',
         'json': {
           'username': 'Phillip',
           'password': 'Phillip'
@@ -301,7 +301,7 @@ describe('', function() {
     it('Logs in existing users', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/login',
+        'uri': 'http://127.0.0.1:3000/login',
         'json': {
           'username': 'Phillip',
           'password': 'Phillip'
@@ -317,7 +317,7 @@ describe('', function() {
     it('Users that do not exist are kept on login page', function(done) {
       var options = {
         'method': 'POST',
-        'uri': 'http://127.0.0.1:4568/login',
+        'uri': 'http://127.0.0.1:3000/login',
         'json': {
           'username': 'Fred',
           'password': 'Fred'

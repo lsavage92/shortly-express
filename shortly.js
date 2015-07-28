@@ -1,8 +1,8 @@
 var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
+var session = require('express-session');
 var bodyParser = require('body-parser');
-
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -21,26 +21,29 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(session({
+  secret: 'Keep it secret, keep it safe!',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {}
+}));
 
-
-app.get('/', function(req, res) {
-  // if user is logged in
+app.get('/', util.checkUser, function(req, res) {
+    console.log("inside 3rd argument");
     res.render('index');
-  // else
-    // res.redirect('/login');
 });
 
-app.get('/create', function(req, res) {
+app.get('/create', util.checkUser, function(req, res) {
   res.render('index');
 });
 
-app.get('/links', function(req, res) {
+app.get('/links', util.checkUser, function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', function(req, res) {
+app.post('/links', util.checkUser, function(req, res) {
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
@@ -91,12 +94,24 @@ app.post('/login', function(req, res){
     if(!authorized){
       res.send(404, "Username or password was incorrect");
     } else {
-      res.redirect('/'); //TODO: confirmation of successful login
+      // create a new session for the user
+      req.session.regenerate(function(){
+        // associate session with the user
+        req.session.user = req.body.username;
+        res.redirect('/'); //TODO: confirmation of successful login
+      })
     }
   }).catch(function(err){
     res.send(404, err);
   });
 
+})
+
+app.get('/logout', function(req, res){
+  req.session.destroy(function(){
+    console.log("Ayyy lmao");
+  });
+  res.send(200, "Logged out successfully");
 })
 
 app.post('/signup', function(req, res) {

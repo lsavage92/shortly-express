@@ -36,6 +36,7 @@ var User = db.Model.extend({
     return new Promise(function(resolve, reject){
       var user = new User({username: username});
       user.fetch().then(function(model){
+        // write if statement for if the model is not found
         bcrypt.compare(password, model.get('password'), function(error, result){
           if(error){
             reject(error);

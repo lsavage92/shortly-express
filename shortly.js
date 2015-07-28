@@ -23,25 +23,24 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
-function(req, res) {
+app.get('/', function(req, res) {
+  // if user is logged in
+    res.render('index');
+  // else
+    // res.redirect('/login');
+});
+
+app.get('/create', function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
-function(req, res) {
-  res.render('index');
-});
-
-app.get('/links', 
-function(req, res) {
+app.get('/links', function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
-function(req, res) {
+app.post('/links', function(req, res) {
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
@@ -78,7 +77,36 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.get('/login', function(req, res) {
+  res.render('login');
+});
 
+app.post('/signup', function(req, res) {
+  // if username and password were not given
+  if(!req.body.username || !req.body.password){
+    // res.send some error statuscode + msg
+    res.send(400, "Must have both username and password to create an account.");
+  }
+  // if username is already in database
+  var newUser = new User({username: req.body.username});
+  newUser.fetch().then(function(model){
+    if(model){
+    // res.send some error statuscode + msg
+      res.send(400, "Must submit a unique username");
+    }
+    else{
+      newUser.signup(req.body.username, req.body.password).then(function(user){
+        res.redirect('/login'); //TODO: Add confirmation of account creation
+      }).catch(function(err){
+        res.send(404, err);
+      });
+    }
+  });
+});
+
+app.get('/signup', function(req, res){
+  res.render('signup');
+})
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
@@ -108,5 +136,5 @@ app.get('/*', function(req, res) {
   });
 });
 
-console.log('Shortly is listening on 4568');
-app.listen(4568);
+console.log('Shortly is listening on 3000');
+app.listen(3000);

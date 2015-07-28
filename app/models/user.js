@@ -6,7 +6,6 @@ var User = db.Model.extend({
   tableName: 'users',
 
   initialize: function(){
-    //TODO: stuff
   },
 
   signup: function(username, password){
@@ -24,7 +23,6 @@ var User = db.Model.extend({
               // add username and hashed password to database
               var user = new User({username: username, password: hash});
               user.save().then(function(){
-                console.log("Got it.");
                 resolve(user);
               });
             }
@@ -35,9 +33,20 @@ var User = db.Model.extend({
   },
 
   login: function(username, password){
-
+    return new Promise(function(resolve, reject){
+      var user = new User({username: username});
+      user.fetch().then(function(model){
+        bcrypt.compare(password, model.get('password'), function(error, result){
+          if(error){
+            reject(error);
+          }
+          else{
+            resolve(result);
+          }
+        });
+      })
+    });
   }
-
 });
 
 module.exports = User;

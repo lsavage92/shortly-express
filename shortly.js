@@ -81,6 +81,24 @@ app.get('/login', function(req, res) {
   res.render('login');
 });
 
+app.post('/login', function(req, res){
+  if(!req.body.username || !req.body.password){
+    // res.send some error statuscode + msg
+    res.send(400, "Must have both username and password to create an account.");
+  }
+  var newUser = new User({username: req.body.username, password: req.body.password});
+  newUser.login(req.body.username, req.body.password).then(function(authorized){
+    if(!authorized){
+      res.send(404, "Username or password was incorrect");
+    } else {
+      res.redirect('/'); //TODO: confirmation of successful login
+    }
+  }).catch(function(err){
+    res.send(404, err);
+  });
+
+})
+
 app.post('/signup', function(req, res) {
   // if username and password were not given
   if(!req.body.username || !req.body.password){

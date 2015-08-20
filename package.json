@@ -22,9 +22,9 @@
     "express-session": "^1.7.2",
     "forever": "^0.10.11",
     "knex": "~0.5.7",
-    "mocha": "^1.17.1",
+    "mocha": "^2.2.5",
     "nodemon": "^1.2.1",
     "request": "^2.34.0",
-    "sqlite3": "~2.2.0"
+    "sqlite3": "~3.0.0"
   }
 }
